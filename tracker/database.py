@@ -9,14 +9,12 @@ class Database:
         peer = self._data_nodes.get(file_name)
         if not peer:
             raise FileDoseNotExist(f'file with name {file_name} dose not exit on network')
-        return peer
+        return peer[-1]
 
     def add_data(self, file_name, peer):
-        if file_name in self._data_nodes.keys():
-            raise FileAlreadyExist(f'file with name {file_name} already exits on network')
-        self._data_nodes[file_name] = {
-            'name': peer,
-        }
+        if not self._data_nodes.get(file_name):
+            self._data_nodes[file_name] = []
+        self._data_nodes[file_name].append(peer)
 
 
 database = Database()

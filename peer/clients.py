@@ -1,47 +1,55 @@
 import asyncudp
 import socket
-from config import *
+from config import Config
 from file_handler import FileHandler
 from logger import logger
 import json
+import asyncio
 
 
 class Response:
     def __init__(self, message: str):
-        params = message.split()
+        params = message.split('\n')
         self.code = int(params[0])
         self.message = params[1]
-        self.data = json .loads(params[2])
+        if self.code == 200:
+            print(params[2])
+            params[2] = params[2].replace("\'", "\"")
+            self.data = json.loads(params[2])
 
 
 class UDPClient:
-    def __init__(self, remote_address: str, port: int):
-        self.host = remote_address
-        self.port = port
+    def __init__(self):
+        self.host = Config.TRACKER_IP
+        self.port = Config.TRACKER_PORT
+        self.local_ip = Config.CLIENT_IP
+        self.local_port = Config.CLIENT_PORT
 
-    async def send_message(self, request: str):
-        sock = await asyncudp.create_socket(remote_addr=(self.host, self.port))
+    async def run_client(self, request: str):
+        print(self.host, self.port)
+        sock = await asyncudp.create_socket(remote_addr=(self.host, self.port),
+                                            local_addr=(self.local_ip, self.local_port))
         sock.sendto(request.encode())
         data, addr = await sock.recvfrom()
+        await asyncio.sleep(0.5)
         sock.close()
         return data.decode()
 
 
-tracker = UDPClient(TRACKER_IP, TRACKER_PORT)
-
-
 class TCPClient:
-    def __init__(self, remote_address: str, port: int):
-        self.host = remote_address
-        self.port = port
+    def __init__(self, remote_host, remote_port):
+        self.host = remote_host
+        self.port = remote_port
+        self.local_ip = Config.CLIENT_IP
+        self.local_port = Config.CLIENT_PORT
 
-    @staticmethod
-    def parse_response(response: str):
+    def parse_response(self, response: str, tracker_connection):
         params = response.split('\n')
+        print(params)
         if params[0] == '200':
             content = '\n'.join(params[2:])
             FileHandler.write_file(params[1], content)
-            tracker.send_message(f'share {params[1]} {CLIENT_IP}:{CLIENT_PORT}')
+            tracker_connection.run_client(f'share {params[1]} {self.local_ip}:{self.local_port}')
             logger.info('ok')
         else:
             logger.error(response)
@@ -50,11 +58,8 @@ class TCPClient:
         s = socket.socket()
 
         s.connect((self.host, self.port))
-        s.send('ack'.encode())
-
         s.send(message.encode())
-        response = s.recv(BUFFER_SIZE).decode()
-        TCPClient.parse_response(response)
+        response = s.recv(Config.BUFFER_SIZE).decode()
         s.close()
         return response
 

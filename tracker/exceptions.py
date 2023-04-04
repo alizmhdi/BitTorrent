@@ -10,12 +10,6 @@ class FileDoseNotExist(BaseException):
         super().__init__(message, *args)
 
 
-class FileAlreadyExist(BaseException):
-    def __init__(self, *args: object, message=None) -> None:
-        message = message if message else "FileAlreadyExist"
-        super().__init__(message, *args)
-
-
 class ClientDoseNotExist(BaseException):
     def __init__(self, *args: object, message=None) -> None:
         message = message if message else "ClientDoseNotExist"

@@ -1,5 +1,5 @@
 import logging
-from config import LOG_PATH
+from config import Config
 
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',

@@ -24,7 +24,7 @@ class Request:
             self.host = params[2]
         except Exception as e:
             raise BadRequestFormat()
-        if self.method != 'get' or self.method != 'share':
+        if self.method != 'get' and self.method != 'share':
             raise BadRequestFormat()
 
 
@@ -36,11 +36,14 @@ class UDPServer:
             if request.method == 'get':
                 peer = database.get_data(request.file_name)
                 return Response(code=200,
-                                message='ok',
+                                message="ok",
                                 data={'peer': peer})
             if request.method == 'share':
                 database.add_data(file_name=request.file_name,
                                   peer=request.host)
+                return Response(code=200,
+                                message='ok',
+                                data={})
         except BadRequestFormat:
             return Response(code='400',
                             message='bad request format')
@@ -55,14 +58,14 @@ class UDPServer:
         self.transport = transport
 
     async def send_to_client(self, address: str, response: Response):
-        message = f'{response.code} {response.message} {str(response.data)}'
+        message = f'{response.code}\n{response.message}\n{str(response.data)}'
         await asyncio.sleep(0.5)
         self.transport.sendto(message.encode(), address)
 
     def datagram_received(self, data, address):
         logger.info(f'get request: {data} from {address}')
 
-        response = UDPServer.parse_request(data)
+        response = UDPServer.parse_request(data.decode())
         loop = asyncio.get_event_loop()
         loop.create_task(self.send_to_client(address=address,
                                              response=response))
