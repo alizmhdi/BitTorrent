@@ -11,10 +11,12 @@ class Database:
             raise FileDoseNotExist(f'file with name {file_name} dose not exit on network')
         return peer
 
-    def add_data(self, file_name, peer_name, ip):
+    def add_data(self, file_name, peer):
         if file_name in self._data_nodes.keys():
             raise FileAlreadyExist(f'file with name {file_name} already exits on network')
         self._data_nodes[file_name] = {
-            'name': peer_name,
-            'ip': ip
+            'name': peer,
         }
+
+
+database = Database()

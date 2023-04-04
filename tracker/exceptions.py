@@ -27,3 +27,9 @@ class ServerInitializingFailed(BaseException):
         message = message if message else "ServerInitializingFailed"
         super().__init__(message, *args)
 
+
+class BadRequestFormat(BaseException):
+    def __init__(self, *args: object, message=None) -> None:
+        message = message if message else "BadRequestFormat"
+        super().__init__(message, *args)
+
