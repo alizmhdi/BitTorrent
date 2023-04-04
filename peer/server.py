@@ -11,7 +11,6 @@ class PeerServer:
     async def handle_client(client):
         loop = asyncio.get_event_loop()
         request = (await loop.sock_recv(client, 255)).decode('utf8').split()
-        print(request)
         method = request[0]
         file_name = request[1]
         if method != 'get':
@@ -21,7 +20,6 @@ class PeerServer:
                 response = '200\n' + file_name + '\n' + FileHandler.get_file(file_name)
             except FileExistsError:
                 response = '404\n' + file_name
-        print(response)
         await loop.sock_sendall(client, response.encode('utf8'))
         client.close()
 

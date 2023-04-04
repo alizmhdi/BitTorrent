@@ -50,9 +50,6 @@ class UDPServer:
         except FileDoseNotExist:
             return Response(code='404',
                             message='file dose not exist on network')
-        except FileAlreadyExist:
-            return Response(code='403',
-                            message='file with this name already exist on network')
 
     def connection_made(self, transport):
         self.transport = transport

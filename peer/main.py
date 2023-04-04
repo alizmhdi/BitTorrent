@@ -34,12 +34,10 @@ if __name__ == "__main__":
     file_name = args[1]
     tracker = args[2].split(':')
     client = args[3].split(':')
-    print(client)
     Config.TRACKER_IP = tracker[0]
     Config.TRACKER_PORT = int(tracker[1])
     Config.CLIENT_IP = client[0]
     Config.CLIENT_PORT = int(client[1])
-    print(Config.CLIENT_PORT)
 
     tracker_connection = UDPClient()
 

@@ -14,5 +14,5 @@ class FileHandler:
 
     @staticmethod
     def write_file(file_name, content):
-        file = open(Config.FILE_PATH + '/' + file_name + '1', 'w')
+        file = open(Config.FILE_PATH + '/' + file_name, 'w')
         file.write(content)

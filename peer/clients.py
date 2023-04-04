@@ -13,7 +13,6 @@ class Response:
         self.code = int(params[0])
         self.message = params[1]
         if self.code == 200:
-            print(params[2])
             params[2] = params[2].replace("\'", "\"")
             self.data = json.loads(params[2])
 
@@ -26,7 +25,6 @@ class UDPClient:
         self.local_port = Config.CLIENT_PORT
 
     async def run_client(self, request: str):
-        print(self.host, self.port)
         sock = await asyncudp.create_socket(remote_addr=(self.host, self.port),
                                             local_addr=(self.local_ip, self.local_port))
         sock.sendto(request.encode())
@@ -45,7 +43,6 @@ class TCPClient:
 
     def parse_response(self, response: str, tracker_connection):
         params = response.split('\n')
-        print(params)
         if params[0] == '200':
             content = '\n'.join(params[2:])
             FileHandler.write_file(params[1], content)
