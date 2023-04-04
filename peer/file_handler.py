@@ -1,0 +1,17 @@
+from config import *
+from exceptions import *
+
+
+class FileHandler:
+    @staticmethod
+    def get_file(file_name):
+        try:
+            file = open(FILE_PATH + '/' + file_name, 'r')
+        except Exception:
+            raise FileDoseNotExist()
+        return file.read()
+
+    @staticmethod
+    def write_file(file_name, content):
+        file = open(FILE_PATH + '/' + file_name, 'w')
+        file.write(content)

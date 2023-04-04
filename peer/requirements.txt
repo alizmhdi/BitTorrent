@@ -1,1 +1,2 @@
+asyncudp==0.9.0
 python-decouple==3.8
