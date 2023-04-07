@@ -1,16 +1,26 @@
 import sys
 from config import Config
+import threading
 from clients import *
 import asyncio
 from server import PeerServer
+import os
 
 
-def share(file_name, tracker):
+async def alive():
+    while True:
+        await tracker_connection.run_client(f'alive alive {Config.CLIENT_IP}:{Config.CLIENT_PORT}',
+                                            local_specify=False)
+        await asyncio.sleep(10)
+
+
+async def share(file_name, tracker):
     response = Response(
-        asyncio.run(tracker.run_client(f'share {file_name} {Config.CLIENT_IP}:{Config.CLIENT_PORT}')))
+        await tracker.run_client(f'share {file_name} {Config.CLIENT_IP}:{Config.CLIENT_PORT}'))
     if response.code == 200:
         logger.info('ok share')
-        asyncio.run(PeerServer.run_server())
+        await alive()
+        await PeerServer.run_server()
     else:
         logger.error(response.message)
 
@@ -45,5 +55,8 @@ if __name__ == "__main__":
         get(file_name, tracker_connection)
 
     if method == 'share':
-        share(file_name, tracker_connection)
+        if os.path.isfile(Config.FILE_PATH + '/' + file_name):
+            asyncio.run(share(file_name, tracker_connection))
+        else:
+            print('you have not this file')
 

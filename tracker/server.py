@@ -1,6 +1,6 @@
 import asyncio
-from logger import logger
-from database import database
+from logger import logger, log
+from database import *
 import json
 from exceptions import *
 
@@ -24,32 +24,58 @@ class Request:
             self.host = params[2]
         except Exception as e:
             raise BadRequestFormat()
-        if self.method != 'get' and self.method != 'share':
+        if self.method != 'get' and self.method != 'share' and self.method != 'alive':
             raise BadRequestFormat()
 
 
 class UDPServer:
+    online_peers = []
+
     @staticmethod
-    def parse_request(message: str):
+    def parse_request(message: str, address: str):
         try:
             request = Request(message)
-            if request.method == 'get':
-                peer = database.get_data(request.file_name)
-                return Response(code=200,
-                                message="ok",
-                                data={'peer': peer})
-            if request.method == 'share':
-                database.add_data(file_name=request.file_name,
-                                  peer=request.host)
-                return Response(code=200,
-                                message='ok',
-                                data={})
         except BadRequestFormat:
+            log.access_log.append(
+                f'received bad request from {address}. request is {message}'
+            )
             return Response(code='400',
                             message='bad request format')
-        except FileDoseNotExist:
-            return Response(code='404',
-                            message='file dose not exist on network')
+        if request.method == 'get':
+            try:
+                peers = database.get_data(request.file_name)
+                peer = Database.chooseـpeer(peers)
+                while peer not in UDPServer.online_peers:
+                    database.remove_peer(request.file_name, peer)
+                    peer = Database.chooseـpeer(peers)
+            except Exception:
+                log.access_log.append(
+                    f'method: get, client: {address}, file: {request.file_name}, result: 404'
+                )
+                return Response(code='404',
+                                message='file dose not exist on network')
+            log.access_log.append(
+                f'method: get, client: {address}, file: {request.file_name}, '
+                f'peers: {database.get_data(request.file_name)}, result: 200'
+            )
+            return Response(code='200',
+                            message="ok",
+                            data={'peer': peer})
+        if request.method == 'share':
+            database.add_data(file_name=request.file_name,
+                              peer=request.host)
+            log.access_log.append(
+                f'method: share, client: {address}, file: {request.file_name}, result: 200'
+            )
+            return Response(code='200',
+                            message='ok',
+                            data={})
+        if request.method == 'alive':
+            if request.host not in UDPServer.online_peers:
+                UDPServer.online_peers.append(request.host)
+            return Response(code='200',
+                            message='ok',
+                            data={})
 
     def connection_made(self, transport):
         self.transport = transport
@@ -62,7 +88,7 @@ class UDPServer:
     def datagram_received(self, data, address):
         logger.info(f'get request: {data} from {address}')
 
-        response = UDPServer.parse_request(data.decode())
+        response = UDPServer.parse_request(data.decode(), address)
         loop = asyncio.get_event_loop()
         loop.create_task(self.send_to_client(address=address,
                                              response=response))

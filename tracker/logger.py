@@ -10,3 +10,11 @@ logging.basicConfig(
     }["INFO"])
 
 logger = logging.getLogger()
+
+
+class Log:
+    def __init__(self):
+        self.access_log = []
+
+
+log = Log()

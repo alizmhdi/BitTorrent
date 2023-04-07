@@ -24,9 +24,12 @@ class UDPClient:
         self.local_ip = Config.CLIENT_IP
         self.local_port = Config.CLIENT_PORT
 
-    async def run_client(self, request: str):
-        sock = await asyncudp.create_socket(remote_addr=(self.host, self.port),
-                                            local_addr=(self.local_ip, self.local_port))
+    async def run_client(self, request: str, local_specify=True):
+        if local_specify:
+            sock = await asyncudp.create_socket(remote_addr=(self.host, self.port),
+                                                local_addr=(self.local_ip, self.local_port))
+        else:
+            sock = await asyncudp.create_socket(remote_addr=(self.host, self.port))
         sock.sendto(request.encode())
         data, addr = await sock.recvfrom()
         await asyncio.sleep(0.5)
@@ -53,7 +56,6 @@ class TCPClient:
 
     def send_message(self, message):
         s = socket.socket()
-
         s.connect((self.host, self.port))
         s.send(message.encode())
         response = s.recv(Config.BUFFER_SIZE).decode()
