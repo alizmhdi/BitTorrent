@@ -6,6 +6,8 @@ import threading
 from logger import log
 from database import database
 from exceptions import *
+from server import UDPServer
+import time
 
 
 def run_program():
@@ -13,8 +15,10 @@ def run_program():
                            port=Config.SERVER_PORT))
 
 
-def keep_alive():
-    pass
+def alive():
+    while True:
+        UDPServer.online_peers = []
+        time.sleep(20)
 
 
 if __name__ == '__main__':
@@ -24,6 +28,8 @@ if __name__ == '__main__':
 
     x = threading.Thread(target=run_program)
     x.start()
+    x = threading.Thread(target=alive)
+    x.start()
 
     while True:
         command = input()
@@ -31,8 +37,10 @@ if __name__ == '__main__':
             if len(log.access_log) == 0:
                 print('There are no requests')
             else:
-                for log in log.access_log:
-                    print(log)
+                for l in log.access_log:
+                    print(l)
+        if command == 'online_peers':
+            print(UDPServer.online_peers)
         if command == 'file_log -all':
             print(database.get_all_data())
             continue

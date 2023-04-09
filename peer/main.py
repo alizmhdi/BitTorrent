@@ -1,17 +1,21 @@
 import sys
-from config import Config
-import threading
 from clients import *
 import asyncio
 from server import PeerServer
 import os
+import sched, time
 
 
 async def alive():
     while True:
-        await tracker_connection.run_client(f'alive alive {Config.CLIENT_IP}:{Config.CLIENT_PORT}',
-                                            local_specify=False)
+        await tracker_connection.run_client(f'alive alive {Config.CLIENT_IP}:{Config.CLIENT_PORT}')
         await asyncio.sleep(10)
+
+
+def run_alive():
+    my_scheduler = sched.scheduler(time.time, time.sleep)
+    my_scheduler.enter(10, 1, alive, (my_scheduler,))
+    my_scheduler.run()
 
 
 async def share(file_name, tracker):
@@ -19,21 +23,22 @@ async def share(file_name, tracker):
         await tracker.run_client(f'share {file_name} {Config.CLIENT_IP}:{Config.CLIENT_PORT}'))
     if response.code == 200:
         logger.info('ok share')
-        await alive()
+        loop = asyncio.get_event_loop()
+        loop.create_task(alive())
         await PeerServer.run_server()
     else:
         logger.error(response.message)
 
 
-def get(file_name, tracker):
+async def get(file_name, tracker):
     response = Response(
-        asyncio.run(tracker_connection.run_client(f'get {file_name} {Config.CLIENT_IP}:{Config.CLIENT_PORT}')))
+        await tracker_connection.run_client(f'get {file_name} {Config.CLIENT_IP}:{Config.CLIENT_PORT}'))
     if response.code == 200:
         peer = response.data['peer'].split(':')
         peer = TCPClient(peer[0], int(peer[1]))
         response = peer.send_message(f'get {file_name}')
-        peer.parse_response(response, tracker)
-        share(file_name, tracker)
+        await peer.parse_response(response, tracker)
+        await share(file_name, tracker)
     else:
         logger.error(response.message)
 
@@ -52,7 +57,7 @@ if __name__ == "__main__":
     tracker_connection = UDPClient()
 
     if method == 'get':
-        get(file_name, tracker_connection)
+        asyncio.run(get(file_name, tracker_connection))
 
     if method == 'share':
         if os.path.isfile(Config.FILE_PATH + '/' + file_name):

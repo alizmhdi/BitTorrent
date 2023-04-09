@@ -1,7 +1,6 @@
 import asyncio
 from logger import logger, log
 from database import *
-import json
 from exceptions import *
 
 
@@ -46,16 +45,15 @@ class UDPServer:
                 peers = database.get_data(request.file_name)
                 peer = Database.chooseـpeer(peers)
                 while peer not in UDPServer.online_peers:
-                    database.remove_peer(request.file_name, peer)
                     peer = Database.chooseـpeer(peers)
             except Exception:
                 log.access_log.append(
-                    f'method: get, client: {address}, file: {request.file_name}, result: 404'
+                    f'method: get, client: {request.host}, file: {request.file_name}, result: 404'
                 )
                 return Response(code='404',
                                 message='file dose not exist on network')
             log.access_log.append(
-                f'method: get, client: {address}, file: {request.file_name}, '
+                f'method: get, client: {request.host}, file: {request.file_name}, '
                 f'peers: {database.get_data(request.file_name)}, result: 200'
             )
             return Response(code='200',
@@ -65,7 +63,7 @@ class UDPServer:
             database.add_data(file_name=request.file_name,
                               peer=request.host)
             log.access_log.append(
-                f'method: share, client: {address}, file: {request.file_name}, result: 200'
+                f'method: share, client: {request.host}, file: {request.file_name}, result: 200'
             )
             return Response(code='200',
                             message='ok',
@@ -86,8 +84,6 @@ class UDPServer:
         self.transport.sendto(message.encode(), address)
 
     def datagram_received(self, data, address):
-        logger.info(f'get request: {data} from {address}')
-
         response = UDPServer.parse_request(data.decode(), address)
         loop = asyncio.get_event_loop()
         loop.create_task(self.send_to_client(address=address,

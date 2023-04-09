@@ -27,6 +27,8 @@ class Database:
 
     @staticmethod
     def chooseـpeer(peers):
+        if len(peers) == 0:
+            raise Exception('file dose not exist')
         return random.choice(peers)
 
 
