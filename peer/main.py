@@ -4,12 +4,14 @@ import asyncio
 from server import PeerServer
 import os
 import sched, time
+from logger import log
+import threading
 
 
 async def alive():
     while True:
         await tracker_connection.run_client(f'alive alive {Config.CLIENT_IP}:{Config.CLIENT_PORT}')
-        await asyncio.sleep(10)
+        await asyncio.sleep(5)
 
 
 def run_alive():
@@ -25,6 +27,7 @@ async def share(file_name, tracker):
         logger.info('ok share')
         loop = asyncio.get_event_loop()
         loop.create_task(alive())
+        await asyncio.sleep(1)
         await PeerServer.run_server()
     else:
         logger.error(response.message)
@@ -36,11 +39,22 @@ async def get(file_name, tracker):
     if response.code == 200:
         peer = response.data['peer'].split(':')
         peer = TCPClient(peer[0], int(peer[1]))
-        response = peer.send_message(f'get {file_name}')
+        response = peer.send_message(f'get {file_name} {Config.CLIENT_IP}:{Config.CLIENT_PORT}')
         await peer.parse_response(response, tracker)
         await share(file_name, tracker)
     else:
         logger.error(response.message)
+
+
+def input_command():
+    while True:
+        command = input()
+        if command == 'request logs':
+            if len(log.access_log) == 0:
+                print('There are no requests')
+            else:
+                for l in log.access_log:
+                    print(l)
 
 
 if __name__ == "__main__":
@@ -56,6 +70,9 @@ if __name__ == "__main__":
 
     tracker_connection = UDPClient()
 
+    x = threading.Thread(target=input_command)
+    x.start()
+
     if method == 'get':
         asyncio.run(get(file_name, tracker_connection))
 
@@ -64,4 +81,5 @@ if __name__ == "__main__":
             asyncio.run(share(file_name, tracker_connection))
         else:
             print('you have not this file')
+
 

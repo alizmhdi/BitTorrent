@@ -7,6 +7,7 @@ from logger import log
 from database import database
 from exceptions import *
 from server import UDPServer
+import datetime
 import time
 
 
@@ -17,8 +18,13 @@ def run_program():
 
 def alive():
     while True:
-        UDPServer.online_peers = []
-        time.sleep(20)
+        for peer in list(UDPServer.online_peers):
+            last_time = UDPServer.online_peers[peer]
+            if (datetime.datetime.now() - last_time).seconds > 9:
+                print(f'{peer} disconnected')
+                del UDPServer.online_peers[peer]
+                database.prune_peer(peer)
+        time.sleep(10)
 
 
 if __name__ == '__main__':

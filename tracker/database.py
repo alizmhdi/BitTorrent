@@ -22,6 +22,11 @@ class Database:
         peers.remove(peer)
         self._data_nodes[file_name] = peers
 
+    def prune_peer(self, peer):
+        for file_name in list(self._data_nodes):
+            if peer in self._data_nodes[file_name]:
+                self._data_nodes[file_name].remove(peer)
+
     def get_all_data(self):
         return self._data_nodes
 

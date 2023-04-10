@@ -2,6 +2,7 @@ import asyncio
 from logger import logger, log
 from database import *
 from exceptions import *
+import datetime
 
 
 class Response:
@@ -28,7 +29,7 @@ class Request:
 
 
 class UDPServer:
-    online_peers = []
+    online_peers = {}
 
     @staticmethod
     def parse_request(message: str, address: str):
@@ -46,6 +47,7 @@ class UDPServer:
                 peer = Database.chooseـpeer(peers)
                 while peer not in UDPServer.online_peers:
                     peer = Database.chooseـpeer(peers)
+                    Database.remove_peer(request.file_name, peer)
             except Exception:
                 log.access_log.append(
                     f'method: get, client: {request.host}, file: {request.file_name}, result: 404'
@@ -69,8 +71,7 @@ class UDPServer:
                             message='ok',
                             data={})
         if request.method == 'alive':
-            if request.host not in UDPServer.online_peers:
-                UDPServer.online_peers.append(request.host)
+            UDPServer.online_peers[request.host] = datetime.datetime.now()
             return Response(code='200',
                             message='ok',
                             data={})
