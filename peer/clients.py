@@ -38,10 +38,10 @@ class TCPClient:
         self.local_ip = Config.CLIENT_IP
         self.local_port = Config.CLIENT_PORT
 
-    async def parse_response(self, response: str, tracker_connection):
-        params = response.split('\n')
-        if params[0] == '200':
-            content = '\n'.join(params[2:])
+    async def parse_response(self, response: bytes, tracker_connection):
+        params = response.split(b'\n')
+        if params[0] == b'200':
+            content = b'\n'.join(params[2:])
             FileHandler.write_file(params[1], content)
             logger.info('ok')
         else:
@@ -51,7 +51,7 @@ class TCPClient:
         s = socket.socket()
         s.connect((self.host, self.port))
         s.send(message.encode())
-        response = s.recv(Config.BUFFER_SIZE).decode()
+        response = s.recv(Config.BUFFER_SIZE)
         s.close()
         return response
 
